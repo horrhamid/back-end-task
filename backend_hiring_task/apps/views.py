@@ -26,7 +26,7 @@ class AppsView(APIView):
                 else:
                     return Response(dict_ser.errors, 400)
 
-        return Response({"status": "done"})
+        return Response({"Status": "done", "ID": str(app.pk)})
 
     def get(self, request, **kwargs):
         app = Apps.objects.all()
@@ -55,11 +55,21 @@ class AppView(APIView):
         apps_ser = AppsSerializer(app, data={"name": data["name"], "image": data["image"], "command": data["command"]})
         if apps_ser.is_valid():
             apps_ser.save()
-            return Response(apps_ser.data)
         else:
             return Response(apps_ser.errors, 400)
 
-
+        dicts = Dicty.objects.filter(app_id=app.pk)
+        for dic in dicts:
+            dic.delete()
+        
+        if "envs" in data:
+            for key in data["envs"]:
+                dict_ser = DictySerializer(data={"key": key, "value": data["envs"][key], "app": app.pk})
+                if dict_ser.is_valid():
+                    dict_ser.save()
+                else:
+                    return Response(dict_ser.errors, 400)
+        return Response(apps_ser.data)
 
 
 class AppRunView(APIView):
